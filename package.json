@@ -1,0 +1,17 @@
+{
+  "name": "anonymous-chat",
+  "version": "2.0.0",
+  "description": "DF404 Anonymous Chat",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.22.1",
+    "multer": "^1.4.5-lts.1",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.3",
+    "ua-parser-js": "^1.0.41",
+    "uuid": "^9.0.1"
+  }
+}

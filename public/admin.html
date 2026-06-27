@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DF404 Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* LOGIN */
+        .login-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-box {
+            background: rgba(15,15,25,0.95);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 18px;
+            padding: 36px 30px;
+            width: 360px;
+            max-width: 92vw;
+            text-align: center;
+        }
+
+        .login-box .logo {
+            font-size: 28px;
+            font-weight: 900;
+            color: #ff4757;
+            letter-spacing: 3px;
+            margin-bottom: 4px;
+        }
+
+        .login-box .sub {
+            color: #555;
+            font-size: 12px;
+            margin-bottom: 22px;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 13px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 12px;
+            transition: 0.3s;
+        }
+
+        .login-box input:focus { border-color: #ff4757; }
+
+        .login-box .err {
+            color: #ff4757;
+            font-size: 11px;
+            min-height: 16px;
+            margin-bottom: 8px;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn:active { transform: scale(0.97); }
+        .btn.full { width: 100%; padding: 13px; font-size: 14px; }
+        .btn.pri { background: linear-gradient(135deg, #6c63ff, #4834d4); color: #fff; }
+        .btn.red-btn { background: linear-gradient(135deg, #ff4757, #c0392b); color: #fff; }
+        .btn.green { background: rgba(46,213,115,0.2); color: #2ed573; border: 1px solid rgba(46,213,115,0.3); }
+        .btn.orange { background: rgba(240,147,43,0.2); color: #f0932b; border: 1px solid rgba(240,147,43,0.3); }
+        .btn.ghost { background: rgba(255,255,255,0.06); color: #888; }
+        .btn.danger { background: rgba(255,71,87,0.15); color: #ff4757; border: 1px solid rgba(255,71,87,0.2); }
+        .btn.purple { background: rgba(108,99,255,0.15); color: #6c63ff; border: 1px solid rgba(108,99,255,0.2); }
+
+        /* DASHBOARD */
+        .dash {
+            display: none;
+            padding: 16px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .dash.on { display: block; }
+
+        .dash-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .dash-head h1 {
+            color: #ff4757;
+            font-size: 20px;
+        }
+
+        .dash-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        /* STATS */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .stat {
+            background: rgba(15,15,25,0.8);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-n {
+            font-size: 28px;
+            font-weight: 800;
+            color: #6c63ff;
+        }
+
+        .stat-l {
+            font-size: 10px;
+            color: #555;
+            margin-top: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 3px;
+            background: rgba(15,15,25,0.6);
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 14px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+
+        .tab.on { background: rgba(108,99,255,0.2); color: #6c63ff; font-weight: 600; }
+
+        .tab-c { display: none; }
+        .tab-c.on { display: block; }
+
+        /* SECTION */
+        .sec {
+            background: rgba(15,15,25,0.8);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .sec h3 {
+            color: #6c63ff;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        /* USER ROW */
+        .urow {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .urow:last-child { border-bottom: none; }
+
+        .uinfo { flex: 1; min-width: 200px; }
+
+        .uinfo .uname {
+            color: #6c63ff;
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .uinfo .udet {
+            color: #555;
+            font-size: 11px;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .uinfo .udet b { color: #777; }
+
+        .uacts { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+        /* ROLE BADGE */
+        .rbadge {
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: 9px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .rbadge.admin { background: rgba(255,71,87,0.2); color: #ff4757; }
+        .rbadge.mod { background: rgba(46,213,115,0.2); color: #2ed573; }
+        .rbadge.premium { background: linear-gradient(135deg,#f9ca24,#f0932b); color: #000; }
+        .rbadge.user { background: rgba(255,255,255,0.05); color: #555; }
+
+        /* ROLE SELECT */
+        .rsel {
+            padding: 5px 8px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 11px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .rsel option { background: #1a1a2e; }
+
+        /* TABLE */
+        .htable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        .htable th {
+            text-align: left;
+            padding: 8px 6px;
+            color: #6c63ff;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 10px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .htable td {
+            padding: 7px 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            color: #888;
+            vertical-align: top;
+        }
+
+        .htable tr:hover td { background: rgba(255,255,255,0.01); }
+
+        /* SEARCH */
+        .search {
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 12px;
+            outline: none;
+            width: 250px;
+            margin-bottom: 12px;
+        }
+
+        .search:focus { border-color: #6c63ff; }
+
+        /* BANNED */
+        .ban-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,71,87,0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            margin: 3px;
+            font-size: 11px;
+            color: #ff4757;
+        }
+
+        .ban-chip .x { cursor: pointer; opacity: 0.6; }
+        .ban-chip .x:hover { opacity: 1; }
+
+        /* CONFIG */
+        .cfg-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .cfg-row label {
+            color: #888;
+            font-size: 12px;
+            min-width: 150px;
+        }
+
+        .cfg-row input {
+            padding: 8px 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 7px;
+            color: #fff;
+            font-size: 12px;
+            outline: none;
+            width: 200px;
+        }
+
+        .cfg-row input:focus { border-color: #6c63ff; }
+
+        .empty {
+            color: #333;
+            font-size: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        /* TOAST */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(46,213,115,0.9);
+            color: #000;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 9999;
+            transition: transform 0.3s;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 768px) {
+            .dash { padding: 10px; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .cfg-row { flex-direction: column; align-items: flex-start; }
+            .cfg-row input { width: 100%; }
+            .search { width: 100%; }
+            .htable { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+    <div class="login-box">
+        <div class="logo">DF404</div>
+        <p class="sub">🛡️ Admin Panel</p>
+        <div class="err" id="loginErr"></div>
+        <input type="password" id="keyIn" placeholder="Admin Key" autocomplete="off" autofocus>
+        <button class="btn full pri" onclick="login()">Access →</button>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash" id="dash">
+    <div class="dash-head">
+        <h1>🛡️ DF404 Admin</h1>
+        <div class="dash-actions">
+            <button class="btn purple" onclick="refresh()">🔄 Refresh</button>
+            <button class="btn green" onclick="exportChat('json')">📥 Chat JSON</button>
+            <button class="btn green" onclick="exportChat('txt')">📄 Chat TXT</button>
+            <button class="btn orange" onclick="exportUsers()">👥 Users</button>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+        <div class="stat"><div class="stat-n" id="sOnline">0</div><div class="stat-l">Online</div></div>
+        <div class="stat"><div class="stat-n" id="sMessages">0</div><div class="stat-l">Messages</div></div>
+        <div class="stat"><div class="stat-n" id="sBanned">0</div><div class="stat-l">Banned</div></div>
+        <div class="stat"><div class="stat-n" id="sTotal">0</div><div class="stat-l">Total Users</div></div>
+        <div class="stat"><div class="stat-n" id="sPremium">0</div><div class="stat-l">Premium</div></div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+        <div class="tab on" onclick="tab('online')">👥 Online</div>
+        <div class="tab" onclick="tab('history')">📋 History</div>
+        <div class="tab" onclick="tab('roles')">🎭 Roles</div>
+        <div class="tab" onclick="tab('banned')">🚫 Banned</div>
+        <div class="tab" onclick="tab('config')">⚙️ Config</div>
+    </div>
+
+    <!-- ONLINE -->
+    <div class="tab-c on" id="tc-online">
+        <div class="sec">
+            <h3>👥 Currently Online (with device info)</h3>
+            <div id="onlineList"><div class="empty">No users online</div></div>
+        </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="tab-c" id="tc-history">
+        <div class="sec">
+            <h3>📋 All Users History</h3>
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+                <input class="search" type="text" placeholder="🔍 Search username or IP..." id="hSearch" oninput="filterHistory()">
+                <button class="btn danger" onclick="clearHistory()">🗑️ Clear All</button>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="htable">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>IP Address</th>
+                            <th>Browser</th>
+                            <th>OS</th>
+                            <th>Device</th>
+                            <th>First Seen</th>
+                            <th>Last Seen</th>
+                            <th>Visits</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROLES -->
+    <div class="tab-c" id="tc-roles">
+        <div class="sec">
+            <h3>🎭 User Roles</h3>
+            <p style="color:#555;font-size:11px;margin-bottom:12px">
+                Role set করলে permanently save হবে।
+                <span class="rbadge admin">ADMIN</span>
+                <span class="rbadge mod">MOD</span>
+                <span class="rbadge premium">PREMIUM</span>
+                <span class="rbadge user">USER</span>
+            </p>
+            <div id="rolesList"></div>
+        </div>
+    </div>
+
+    <!-- BANNED -->
+    <div class="tab-c" id="tc-banned">
+        <div class="sec">
+            <h3>🚫 Banned Usernames</h3>
+            <div id="bannedUsers"><div class="empty">কেউ banned নেই</div></div>
+        </div>
+        <div class="sec">
+            <h3>🚫 Banned IPs</h3>
+            <div id="bannedIPs"><div class="empty">কোনো IP banned নেই</div></div>
+        </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="tab-c" id="tc-config">
+        <div class="sec">
+            <h3>⚙️ Configuration</h3>
+            <div class="cfg-row">
+                <label>Room Password</label>
+                <input type="text" id="cfgPass">
+            </div>
+            <div class="cfg-row">
+                <label>Admin Key</label>
+                <input type="text" id="cfgAdmin">
+            </div>
+            <div class="cfg-row">
+                <label>Premium Code</label>
+                <input type="text" id="cfgPrem">
+            </div>
+            <div class="cfg-row">
+                <label>Max Users</label>
+                <input type="number" id="cfgMax">
+            </div>
+            <div class="cfg-row">
+                <label>Auto Destroy (min)</label>
+                <input type="number" id="cfgDestroy">
+            </div>
+            <button class="btn pri" onclick="saveConfig()" style="margin-top:8px">💾 Save Config</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let KEY = '';
+    let dashData = null;
+
+    // Enter key
+    document.getElementById('keyIn').addEventListener('keypress', e => {
+        if (e.key === 'Enter') login();
+    });
+
+    // ==================== LOGIN ====================
+    async function login() {
+        KEY = document.getElementById('keyIn').value.trim();
+        if (!KEY) return;
+
+        try {
+            const r = await fetch('/api/admin-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: KEY })
+            });
+            const d = await r.json();
+
+            if (d.success) {
+                dashData = d;
+                document.getElementById('loginWrap').style.display = 'none';
+                document.getElementById('dash').classList.add('on');
+                render(d);
+                startAutoRefresh();
+            } else {
+                const err = document.getElementById('loginErr');
+                err.textContent = '❌ Wrong admin key!';
+                setTimeout(() => { err.textContent = ''; }, 3000);
+            }
+        } catch(e) {
+            document.getElementById('loginErr').textContent = '❌ Server error';
+        }
+    }
+
+    // ==================== RENDER ====================
+    function render(d) {
+        dashData = d;
+
+        // Stats
+        const online = Object.keys(d.onlineUsers || {}).length;
+        document.getElementById('sOnline').textContent = online;
+        document.getElementById('sMessages').textContent = (d.messages || []).length;
+        document.getElementById('sBanned').textContent = (d.bannedIPs || []).length + (d.bannedUsernames || []).length;
+        document.getElementById('sTotal').textContent = (d.allUsersHistory || []).length;
+        document.getElementById('sPremium').textContent = (d.premiumUsers || []).length;
+
+        renderOnline(d);
+        renderHistory(d.allUsersHistory || []);
+        renderRoles(d);
+        renderBanned(d);
+        loadConfig(d.config || {});
+    }
+
+    // ==================== ONLINE USERS ====================
+    function renderOnline(d) {
+        const list = document.getElementById('onlineList');
+        const entries = Object.entries(d.users || {});
+
+        if (!entries.length) {
+            list.innerHTML = '<div class="empty">No users online</div>';
+            return;
+        }
+
+        list.innerHTML = '';
+        entries.forEach(([sid, info]) => {
+            const role = (d.userRoles || {})[info.username] || 'user';
+            const div = document.createElement('div');
+            div.className = 'urow';
+            div.innerHTML = `
+                <div class="uinfo">
+                    <div class="uname">
+                        @${info.username}
+                        ${roleBadge(role)}
+                        <span style="color:#2ed573;font-size:9px">● online</span>
+                    </div>
+                    <div class="udet">📍 <b>IP:</b> ${info.ip || 'N/A'}</div>
+                    <div class="udet">🌐 <b>Browser:</b> ${info.browser?.name || '?'} ${info.browser?.version || ''}</div>
+                    <div class="udet">💻 <b>OS:</b> ${info.os?.name || '?'} ${info.os?.version || ''}</div>
+                    <div class="udet">📱 <b>Device:</b> ${info.device?.vendor || ''} ${info.device?.model || 'Desktop'} (${info.device?.type || 'desktop'})</div>
+                    <div class="udet">🕐 <b>Connected:</b> ${info.connectedAt || ''}</div>
+                    <div class="udet" style="word-break:break-all">🔌 <b>Socket:</b> ${sid}</div>
+                </div>
+                <div class="uacts">
+                    <select class="rsel" onchange="setRole('${info.username}', this.value)">
+                        <option value="user" ${role==='user'?'selected':''}>👤 User</option>
+                        <option value="premium" ${role==='premium'?'selected':''}>⭐ Premium</option>
+                        <option value="mod" ${role==='mod'?'selected':''}>⚔️ Mod</option>
+                        <option value="admin" ${role==='admin'?'selected':''}>🛡️ Admin</option>
+                    </select>
+                    <button class="btn orange" onclick="kick('${sid}')">⚡ Kick</button>
+                    <button class="btn danger" onclick="ban('${info.username}','${info.ip}')">🚫 Ban</button>
+                </div>`;
+            list.appendChild(div);
+        });
+    }
+
+    // ==================== HISTORY ====================
+    function renderHistory(history) {
+        const tbody = document.getElementById('historyBody');
+        tbody.innerHTML = '';
+
+        if (!history.length) {
+            tbody.innerHTML = '<tr><td colspan="10" class="empty">No history</td></tr>';
+            return;
+        }
+
+        // Sort newest first
+        [...history].sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen))
+        .forEach(u => {
+            const tr = document.createElement('tr');
+            tr.className = 'hrow';
+            tr.dataset.search = (u.username + ' ' + u.ip).toLowerCase();
+            tr.innerHTML = `
+                <td><b style="color:#6c63ff">@${u.username}</b></td>
+                <td style="color:#888;font-family:monospace">${u.ip || 'N/A'}</td>
+                <td>${u.browser?.name || '?'} ${u.browser?.version || ''}</td>
+                <td>${u.os?.name || '?'} ${u.os?.version || ''}</td>
+                <td>${u.device?.vendor || ''} ${u.device?.model || 'Desktop'}</td>
+                <td style="font-size:10px;white-space:nowrap">${u.firstSeen || ''}</td>
+                <td style="font-size:10px;white-space:nowrap">${u.lastSeen || ''}</td>
+                <td style="text-align:center"><b style="color:#6c63ff">${u.visitCount || 1}</b></td>
+                <td>${roleBadge(u.role || 'user')}</td>
+                <td>
+                    <button class="btn danger" style="font-size:10px;padding:4px 8px" onclick="ban('${u.username}','${u.ip}')">Ban</button>
+                </td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function filterHistory() {
+        const q = document.getElementById('hSearch').value.toLowerCase();
+        document.querySelectorAll('.hrow').forEach(r => {
+            r.style.display = r.dataset.search.includes(q) ? '' : 'none';
+        });
+    }
+
+    // ==================== ROLES ====================
+    function renderRoles(d) {
+        const list = document.getElementById('rolesList');
+        list.innerHTML = '';
+
+        // All known users (online + history)
+        const allUsers = new Set();
+        Object.values(d.onlineUsers || {}).forEach(u => { if (u) allUsers.add(u); });
+        (d.allUsersHistory || []).forEach(u => allUsers.add(u.username));
+
+        if (!allUsers.size) {
+            list.innerHTML = '<div class="empty">No users</div>';
+            return;
+        }
+
+        allUsers.forEach(uname => {
+            const role = (d.userRoles || {})[uname] || 'user';
+            const isOnline = Object.values(d.onlineUsers || {}).includes(uname);
+            const div = document.createElement('div');
+            div.className = 'urow';
+            div.innerHTML = `
+                <div class="uinfo">
+                    <div class="uname">
+                        @${uname}
+                        ${roleBadge(role)}
+                        ${isOnline
+                            ? '<span style="color:#2ed573;font-size:9px">● online</span>'
+                            : '<span style="color:#444;font-size:9px">○ offline</span>'}
+                    </div>
+                </div>
+                <div class="uacts">
+                    <select class="rsel" onchange="setRole('${uname}', this.value)">
+                        <option value="user" ${role==='user'?'selected':''}>👤 User</option>
+                        <option value="premium" ${role==='premium'?'selected':''}>⭐ Premium</option>
+                        <option value="mod" ${role==='mod'?'selected':''}>⚔️ Mod</option>
+                        <option value="admin" ${role==='admin'?'selected':''}>🛡️ Admin</option>
+                    </select>
+                </div>`;
+            list.appendChild(div);
+        });
+    }
+
+    // ==================== BANNED ====================
+    function renderBanned(d) {
+        const uDiv = document.getElementById('bannedUsers');
+        const iDiv = document.getElementById('bannedIPs');
+
+        if (!(d.bannedUsernames || []).length) {
+            uDiv.innerHTML = '<div class="empty">কেউ banned নেই</div>';
+        } else {
+            uDiv.innerHTML = '';
+            d.bannedUsernames.forEach(u => {
+                uDiv.innerHTML += `<span class="ban-chip">@${u} <span class="x" onclick="unban('${u}','')">✕</span></span>`;
+            });
+        }
+
+        if (!(d.bannedIPs || []).length) {
+            iDiv.innerHTML = '<div class="empty">কোনো IP banned নেই</div>';
+        } else {
+            iDiv.innerHTML = '';
+            d.bannedIPs.forEach(ip => {
+                iDiv.innerHTML += `<span class="ban-chip">${ip} <span class="x" onclick="unban('','${ip}')">✕</span></span>`;
+            });
+        }
+    }
+
+    // ==================== CONFIG ====================
+    function loadConfig(cfg) {
+        document.getElementById('cfgPass').value = cfg.ROOM_PASSWORD || '';
+        document.getElementById('cfgAdmin').value = cfg.ADMIN_KEY || '';
+        document.getElementById('cfgPrem').value = cfg.PREMIUM_CODE || '';
+        document.getElementById('cfgMax').value = cfg.MAX_USERS || 50;
+        document.getElementById('cfgDestroy').value = cfg.AUTO_DESTROY_MINUTES || 30;
+    }
+
+    async function saveConfig() {
+        const config = {
+            ROOM_PASSWORD: document.getElementById('cfgPass').value,
+            ADMIN_KEY: document.getElementById('cfgAdmin').value,
+            PREMIUM_CODE: document.getElementById('cfgPrem').value,
+            MAX_USERS: parseInt(document.getElementById('cfgMax').value),
+            AUTO_DESTROY_MINUTES: parseInt(document.getElementById('cfgDestroy').value)
+        };
+
+        const r = await post('/api/admin/update-config', { config });
+        if (r.success) {
+            // Update key if changed
+            if (config.ADMIN_KEY) KEY = config.ADMIN_KEY;
+            toast('✅ Config saved!');
+        }
+    }
+
+    // ==================== ACTIONS ====================
+    async function kick(sid) {
+        if (!confirm('Kick this user?')) return;
+        await post('/api/admin/kick', { socketId: sid });
+        toast('⚡ User kicked');
+        setTimeout(refresh, 500);
+    }
+
+    async function ban(username, ip) {
+        if (!confirm(`Ban @${username}?`)) return;
+        await post('/api/admin/ban', { username, ip });
+        toast('🚫 Banned: @' + username);
+        setTimeout(refresh, 500);
+    }
+
+    async function unban(username, ip) {
+        await post('/api/admin/unban', { username, ip });
+        toast('✅ Unbanned');
+        setTimeout(refresh, 500);
+    }
+
+    async function setRole(username, role) {
+        await post('/api/admin/set-role', { username, role });
+        toast(`✅ @${username} → ${role}`);
+        setTimeout(refresh, 500);
+    }
+
+    async function clearHistory() {
+        if (!confirm('⚠️ All user history delete হবে?')) return;
+        if (!confirm('⚠️ Sure? Undo করা যাবে না!')) return;
+        await post('/api/admin/clear-history', {});
+        toast('🗑️ History cleared');
+        setTimeout(refresh, 500);
+    }
+
+    function exportChat(fmt) {
+        window.open(`/api/admin/export-chat?key=${KEY}&format=${fmt}`, '_blank');
+    }
+
+    function exportUsers() {
+        window.open(`/api/admin/export-users?key=${KEY}`, '_blank');
+    }
+
+    // ==================== HELPERS ====================
+    async function post(url, body) {
+        try {
+            const r = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: KEY, ...body })
+            });
+            return await r.json();
+        } catch(e) { return {}; }
+    }
+
+    async function refresh() {
+        try {
+            const r = await fetch('/api/admin-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: KEY })
+            });
+            const d = await r.json();
+            if (d.success) render(d);
+        } catch(e) {}
+    }
+
+    function tab(name) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+        document.querySelectorAll('.tab-c').forEach(t => t.classList.remove('on'));
+        event.target.classList.add('on');
+        document.getElementById('tc-' + name).classList.add('on');
+    }
+
+    function roleBadge(role) {
+        const map = {
+            admin: '<span class="rbadge admin">🛡️ ADMIN</span>',
+            mod: '<span class="rbadge mod">⚔️ MOD</span>',
+            premium: '<span class="rbadge premium">⭐ PREMIUM</span>',
+            user: '<span class="rbadge user">USER</span>'
+        };
+        return map[role] || map.user;
+    }
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // Auto refresh every 5 seconds
+    function startAutoRefresh() {
+        setInterval(() => {
+            if (KEY) refresh();
+        }, 5000);
+    }
+</script>
+</body>
+</html>

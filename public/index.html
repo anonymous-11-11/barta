@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>DF404</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background:
+                radial-gradient(circle at 20% 50%, #1a0533 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, #0a1628 0%, transparent 50%);
+            animation: bg 15s ease-in-out infinite;
+            z-index: -1;
+        }
+        @keyframes bg {
+            0%,100% { transform: translate(0,0); }
+            50% { transform: translate(-2%,-1%); }
+        }
+        .box {
+            background: rgba(15,15,25,0.92);
+            border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 36px 30px;
+            text-align: center;
+            width: 380px;
+            max-width: 92vw;
+        }
+        .logo {
+            font-size: 34px;
+            font-weight: 900;
+            color: #6c63ff;
+            letter-spacing: 4px;
+            margin-bottom: 4px;
+        }
+        .sub { color: #555; font-size: 12px; margin-bottom: 24px; }
+        .dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 18px; }
+        .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            transition: 0.3s;
+        }
+        .dot.on { background: #6c63ff; box-shadow: 0 0 8px rgba(108,99,255,0.5); }
+        .step { display: none; }
+        .step.on { display: block; }
+        .label {
+            color: #777;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+        .field { position: relative; margin-bottom: 12px; }
+        .field .ic {
+            position: absolute;
+            left: 13px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 15px;
+        }
+        .field input {
+            width: 100%;
+            padding: 13px 16px 13px 38px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.08);
+            border-radius: 11px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: 0.3s;
+        }
+        .field input:focus {
+            border-color: #6c63ff;
+        }
+        .field input::placeholder { color: #444; }
+        .btn {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #6c63ff, #4834d4);
+            border: none;
+            border-radius: 11px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 4px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn2 {
+            width: 100%;
+            padding: 11px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 11px;
+            color: #888;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .err {
+            color: #ff4757;
+            font-size: 11px;
+            margin-bottom: 8px;
+            min-height: 16px;
+        }
+        .tags {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .tags span { color: #444; font-size: 10px; }
+        .gold {
+            background: linear-gradient(135deg, #f9ca24, #f0932b);
+            color: #000;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            display: inline-block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="box">
+    <div class="logo">DF404</div>
+    <p class="sub">Anonymous Chat • No trace</p>
+
+    <div class="dots">
+        <div class="dot on" id="d1"></div>
+        <div class="dot" id="d2"></div>
+    </div>
+
+    <div class="err" id="err"></div>
+
+    <!-- Step 1: Password -->
+    <div class="step on" id="s1">
+        <p class="label">Room Password</p>
+        <div class="field">
+            <span class="ic">🔒</span>
+            <input type="password" id="pass" placeholder="Enter password" autocomplete="off" autofocus>
+        </div>
+        <button class="btn" onclick="checkPass()">Unlock →</button>
+    </div>
+
+    <!-- Step 2: Username -->
+    <div class="step" id="s2">
+        <p class="label">Choose Username</p>
+        <div class="field">
+            <span class="ic">@</span>
+            <input type="text" id="uname" placeholder="Username" maxlength="20" autocomplete="off">
+        </div>
+        <button class="btn" onclick="go()">Enter DF404 →</button>
+        <button class="btn2" onclick="togglePrem()">⭐ Premium Code?</button>
+        <div id="premBox" style="display:none;margin-top:10px;">
+            <div class="field">
+                <span class="ic">⭐</span>
+                <input type="text" id="premCode" placeholder="Premium code" autocomplete="off">
+            </div>
+            <button class="btn" style="background:linear-gradient(135deg,#f9ca24,#f0932b);" onclick="checkPrem()">Activate</button>
+        </div>
+    </div>
+
+    <div class="tags">
+        <span>🔒 Encrypted</span>
+        <span>💨 Vanish</span>
+        <span>📷 Media</span>
+        <span>🎙️ Voice</span>
+    </div>
+</div>
+
+<script>
+    let step = 1;
+
+    document.querySelectorAll('input').forEach(i => {
+        i.addEventListener('keypress', e => {
+            if (e.key === 'Enter') step === 1 ? checkPass() : go();
+        });
+        i.addEventListener('input', () => {
+            if (i.id === 'uname') i.value = i.value.replace(/\s/g, '');
+        });
+    });
+
+    function err(msg) {
+        document.getElementById('err').textContent = msg;
+        setTimeout(() => document.getElementById('err').textContent = '', 3000);
+    }
+
+    function goStep(n) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('on'));
+        document.querySelectorAll('.dot').forEach(d => d.classList.remove('on'));
+        document.getElementById('s' + n).classList.add('on');
+        for (let i = 1; i <= n; i++) document.getElementById('d' + i).classList.add('on');
+        step = n;
+    }
+
+    async function checkPass() {
+        const p = document.getElementById('pass').value.trim();
+        if (!p) return err('Password দাও!');
+        const r = await fetch('/api/validate-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: p })
+        });
+        const d = await r.json();
+        if (d.valid) goStep(2);
+        else err('Wrong password!');
+    }
+
+    function go() {
+        const u = document.getElementById('uname').value.trim();
+        if (!u || u.length < 2) return err('কমপক্ষে ২ অক্ষর দাও!');
+        sessionStorage.setItem('username', u);
+        window.location.href = '/chat';
+    }
+
+    function togglePrem() {
+        const b = document.getElementById('premBox');
+        b.style.display = b.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function checkPrem() {
+        const c = document.getElementById('premCode').value.trim();
+        const u = document.getElementById('uname').value.trim();
+        if (!c) return err('Code দাও!');
+        if (!u) return err('আগে username লেখো!');
+        const r = await fetch('/api/validate-premium', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: c, username: u })
+        });
+        const d = await r.json();
+        if (d.valid) {
+            sessionStorage.setItem('isPremium', 'true');
+            document.getElementById('premBox').innerHTML = '<div class="gold">⭐ PREMIUM ACTIVATED</div>';
+        } else err('Invalid code!');
+    }
+</script>
+</body>
+</html>
