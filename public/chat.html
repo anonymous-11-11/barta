@@ -486,6 +486,48 @@ body {
     font-size: 12px; outline: none; min-width: 0;
 }
 
+/* DM SWIPE FIX */
+.dm-msgs {
+    overflow-x: hidden;
+}
+
+.dm-msgs .msg {
+    position: relative;
+    touch-action: pan-y;
+    will-change: transform;
+    overflow: visible;
+}
+/* DM Message Width Fix */
+.dm-msgs > div {
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    margin-bottom: 4px;
+    position: relative;
+}
+
+.dm-msgs > div .msg {
+    max-width: 75% !important;
+    display: inline-block;
+    width: auto;
+}
+
+.dm-msgs > div .msg.me {
+    align-self: flex-end;
+    margin-left: auto;
+}
+
+.dm-msgs > div .msg.them {
+    align-self: flex-start;
+    margin-right: auto;
+}
+
+.dm-msgs .bubble {
+    display: inline-block;
+    max-width: 100%;
+    word-wrap: break-word;
+}
+
 /* CALL */
 .call-over {
     display: none; position: fixed;
@@ -769,12 +811,19 @@ body.light .input-bar input { background: #eee; color: #333; }
         </div>
     </div>
     <div class="dm-msgs" id="dmMsgs"></div>
+
+    <!-- DM Reply Bar -->
+    <div class="reply-bar" id="dmReplyBar" style="margin:0">
+        <span id="dmReplyTxt" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <span style="cursor:pointer;color:#555;font-size:14px" onclick="cancelDMReply()">✕</span>
+    </div>
+
     <div class="dm-foot">
         <input type="text" id="dmIn" placeholder="Private message..." onkeypress="if(event.key==='Enter')sendDM()">
         <button class="sendbtn" style="width:30px;height:30px" onclick="sendDM()">➤</button>
     </div>
 </div>
-
+   
 <!-- INCOMING CALL -->
 <div class="inc-call" id="incCall">
     <div id="callerName" style="color:#fff;font-weight:600;margin-bottom:3px">Unknown</div>
