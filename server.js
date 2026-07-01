@@ -12,9 +12,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     maxHttpBufferSize: 50 * 1024 * 1024,
-    pingTimeout: 60000
+    pingTimeout: 120000,
+    pingInterval: 30000,
+    connectTimeout: 60000,
+    allowUpgrades: true,
+    transports: ['websocket', 'polling']
 });
-
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '50mb' }));
 app.set('trust proxy', true);
@@ -104,9 +107,15 @@ const upload = multer({
 setInterval(() => {
     const now = Date.now();
     const limit = CONFIG.AUTO_DESTROY_MINUTES * 60 * 1000;
-    const before = messages.length;
-    messages = messages.filter(m => (now - m.timestamp) < limit);
-    if (messages.length < before) io.emit('messagesCleanup');
+    const expired = messages.filter(m => (now - m.timestamp) >= limit);
+
+    if (expired.length > 0) {
+        // Send expired message IDs to client
+        const expiredIds = expired.map(m => m.id);
+        messages = messages.filter(m => (now - m.timestamp) < limit);
+        io.emit('messagesExpired', { ids: expiredIds });
+        console.log(`🗑️ Auto-destroyed ${expiredIds.length} messages`);
+    }
 }, 30000);
 
 // ===== ROUTES =====
@@ -249,63 +258,43 @@ io.on('connection', (socket) => {
     if (bannedIPs.includes(ip)) { socket.emit('kicked', { reason: 'IP banned' }); socket.disconnect(); return; }
 
     socket.on('join', (data) => {
-    const { username, room } = data;
+        const { username, room } = data;
+        if (bannedUsernames.includes(username)) { socket.emit('kicked', { reason: 'Banned' }); socket.disconnect(); return; }
+        if (Object.values(users).includes(username)) { socket.emit('duplicateUsername'); return; }
+        if (Object.keys(users).length >= CONFIG.MAX_USERS) { socket.emit('roomFull'); return; }
 
-    if (bannedUsernames.includes(username)) {
-        socket.emit('kicked', { reason: 'Banned' });
-        socket.disconnect();
-        return;
-    }
+        users[socket.id] = username;
+        const r = room || 'general';
+        socket.join(r);
+        if (!userRoles[username]) userRoles[username] = 'user';
 
-    // Check duplicate - but allow if same user reconnecting
-    const existingSocketId = Object.keys(users).find(sid => users[sid] === username);
-    if (existingSocketId && existingSocketId !== socket.id) {
-        // Disconnect old socket (user refreshed/reconnected)
-        const oldSocket = io.sockets.sockets.get(existingSocketId);
-        if (oldSocket) {
-            oldSocket.disconnect();
-        }
-        delete users[existingSocketId];
-        delete userDetails[existingSocketId];
-    }
+        userDetails[socket.id] = {
+            username, ip,
+            browser: parser.getBrowser(),
+            os: parser.getOS(),
+            device: parser.getDevice(),
+            connectedAt: new Date().toLocaleString(),
+            socketId: socket.id,
+            role: userRoles[username],
+            room: r
+        };
 
-    if (Object.keys(users).length >= CONFIG.MAX_USERS) {
-        socket.emit('roomFull');
-        return;
-    }
+        addToHistory(userDetails[socket.id]);
 
-    users[socket.id] = username;
-    const r = room || 'general';
-    socket.join(r);
-    if (!userRoles[username]) userRoles[username] = 'user';
+        socket.emit('allProfiles', profilePics);
+        socket.emit('isPremium', premiumUsers.includes(username));
+        socket.emit('myRole', userRoles[username]);
+        socket.emit('roomsList', rooms);
 
-    userDetails[socket.id] = {
-        username, ip,
-        browser: parser.getBrowser(),
-        os: parser.getOS(),
-        device: parser.getDevice(),
-        connectedAt: new Date().toLocaleString(),
-        socketId: socket.id,
-        role: userRoles[username],
-        room: r
-    };
+        io.emit('userJoined', {
+            username,
+            onlineCount: Object.keys(users).length,
+            users: Object.values(users),
+            premiumUsers, userRoles
+        });
 
-    addToHistory(userDetails[socket.id]);
-
-    socket.emit('allProfiles', profilePics);
-    socket.emit('isPremium', premiumUsers.includes(username));
-    socket.emit('myRole', userRoles[username]);
-    socket.emit('roomsList', rooms);
-
-    io.emit('userJoined', {
-        username,
-        onlineCount: Object.keys(users).length,
-        users: Object.values(users),
-        premiumUsers, userRoles
+        console.log(`👤 ${username} | ${ip} | ${parser.getBrowser().name || '?'} | ${parser.getOS().name || '?'}`);
     });
-
-    console.log(`👤 ${username} | ${ip} | ${parser.getBrowser().name || '?'} | ${parser.getOS().name || '?'}`);
-});
 
     // TEXT
     socket.on('sendMessage', (data) => {
