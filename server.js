@@ -258,43 +258,63 @@ io.on('connection', (socket) => {
     if (bannedIPs.includes(ip)) { socket.emit('kicked', { reason: 'IP banned' }); socket.disconnect(); return; }
 
     socket.on('join', (data) => {
-        const { username, room } = data;
-        if (bannedUsernames.includes(username)) { socket.emit('kicked', { reason: 'Banned' }); socket.disconnect(); return; }
-        if (Object.values(users).includes(username)) { socket.emit('duplicateUsername'); return; }
-        if (Object.keys(users).length >= CONFIG.MAX_USERS) { socket.emit('roomFull'); return; }
+    const { username, room } = data;
 
-        users[socket.id] = username;
-        const r = room || 'general';
-        socket.join(r);
-        if (!userRoles[username]) userRoles[username] = 'user';
+    if (bannedUsernames.includes(username)) {
+        socket.emit('kicked', { reason: 'Banned' });
+        socket.disconnect();
+        return;
+    }
 
-        userDetails[socket.id] = {
-            username, ip,
-            browser: parser.getBrowser(),
-            os: parser.getOS(),
-            device: parser.getDevice(),
-            connectedAt: new Date().toLocaleString(),
-            socketId: socket.id,
-            role: userRoles[username],
-            room: r
-        };
+    // Check duplicate - but allow if same user reconnecting
+    const existingSocketId = Object.keys(users).find(sid => users[sid] === username);
+    if (existingSocketId && existingSocketId !== socket.id) {
+        // Disconnect old socket (user refreshed/reconnected)
+        const oldSocket = io.sockets.sockets.get(existingSocketId);
+        if (oldSocket) {
+            oldSocket.disconnect();
+        }
+        delete users[existingSocketId];
+        delete userDetails[existingSocketId];
+    }
 
-        addToHistory(userDetails[socket.id]);
+    if (Object.keys(users).length >= CONFIG.MAX_USERS) {
+        socket.emit('roomFull');
+        return;
+    }
 
-        socket.emit('allProfiles', profilePics);
-        socket.emit('isPremium', premiumUsers.includes(username));
-        socket.emit('myRole', userRoles[username]);
-        socket.emit('roomsList', rooms);
+    users[socket.id] = username;
+    const r = room || 'general';
+    socket.join(r);
+    if (!userRoles[username]) userRoles[username] = 'user';
 
-        io.emit('userJoined', {
-            username,
-            onlineCount: Object.keys(users).length,
-            users: Object.values(users),
-            premiumUsers, userRoles
-        });
+    userDetails[socket.id] = {
+        username, ip,
+        browser: parser.getBrowser(),
+        os: parser.getOS(),
+        device: parser.getDevice(),
+        connectedAt: new Date().toLocaleString(),
+        socketId: socket.id,
+        role: userRoles[username],
+        room: r
+    };
 
-        console.log(`👤 ${username} | ${ip} | ${parser.getBrowser().name || '?'} | ${parser.getOS().name || '?'}`);
+    addToHistory(userDetails[socket.id]);
+
+    socket.emit('allProfiles', profilePics);
+    socket.emit('isPremium', premiumUsers.includes(username));
+    socket.emit('myRole', userRoles[username]);
+    socket.emit('roomsList', rooms);
+
+    io.emit('userJoined', {
+        username,
+        onlineCount: Object.keys(users).length,
+        users: Object.values(users),
+        premiumUsers, userRoles
     });
+
+    console.log(`👤 ${username} | ${ip} | ${parser.getBrowser().name || '?'} | ${parser.getOS().name || '?'}`);
+});
 
     // TEXT
     socket.on('sendMessage', (data) => {
