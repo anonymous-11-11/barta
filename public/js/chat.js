@@ -2,7 +2,28 @@
 const ME = sessionStorage.getItem('username');
 if (!ME) window.location.href = '/';
 
-const socket = io({ reconnection: true, reconnectionAttempts: 10 });
+const socket = io({
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 120000,
+    transports: ['websocket', 'polling']
+});
+
+// Reconnect handling
+socket.on('reconnect', () => {
+    console.log('🔄 Reconnected');
+    socket.emit('join', { username: ME, room: curRoom });
+});
+
+socket.on('disconnect', reason => {
+    console.log('🔴 Disconnected:', reason);
+    if (reason === 'io server disconnect') {
+        // Server disconnected, try reconnect
+        socket.connect();
+    }
+});
 
 const msgsDiv = document.getElementById('msgs');
 const msgIn = document.getElementById('msgIn');
@@ -177,7 +198,18 @@ socket.on('messageDeleted', d => {
 socket.on('reactionUpdate', d => updateReacts(d.messageId, d.reactions));
 socket.on('messageDelivered', d => { const s = document.querySelector('#m' + d.id + ' .stat'); if (s) s.textContent = '✓'; });
 socket.on('messageSeenUpdate', d => { const s = document.querySelector('#m' + d.messageId + ' .stat'); if (s) s.textContent = '✓✓'; });
-socket.on('messagesCleanup', () => sysMsg('🗑️ Auto-destroyed'));
+// Old messages expired - remove from UI
+socket.on('messagesExpired', d => {
+    if (!d.ids || !d.ids.length) return;
+    d.ids.forEach(id => {
+        const el = document.getElementById('m' + id);
+        if (el) {
+            el.classList.add('deleting');
+            setTimeout(() => el && el.remove(), 500);
+        }
+    });
+    sysMsg('🗑️ ' + d.ids.length + ' messages auto-destroyed');
+});
 socket.on('duplicateUsername', () => { alert('Username taken!'); sessionStorage.clear(); window.location.href = '/'; });
 socket.on('roomFull', () => { alert('Room full!'); window.location.href = '/'; });
 socket.on('kicked', d => { alert('❌ ' + d.reason); sessionStorage.clear(); window.location.href = '/'; });
@@ -844,6 +876,6 @@ if('Notification' in window&&Notification.permission==='default')Notification.re
 document.addEventListener('click',e=>{if(!e.target.closest('.picker')&&!e.target.closest('.tbtn')){document.getElementById('emojiPick').classList.remove('on');document.getElementById('gifPick').classList.remove('on');}});
 document.addEventListener('click',e=>{if(window.innerWidth<=768&&curSide&&!e.target.closest('.side')&&!e.target.closest('.lbar'))closeSide();});
 window.addEventListener('resize',()=>{msgsDiv.scrollTop=msgsDiv.scrollHeight;});
-//window.addEventListener('beforeunload',e=>{e.preventDefault();e.returnValue='';});
+// window.addEventListener('beforeunload',e=>{e.preventDefault();e.returnValue='';});
 
 setTimeout(updateUIForRole,1000);
