@@ -685,6 +685,7 @@ function addMsg(data) {
 
     div.innerHTML = h;
     setupLongPress(div, data);
+    setupSwipeReply(div, data);
     msgsDiv.appendChild(div);
     msgsDiv.scrollTop = msgsDiv.scrollHeight;
 }
@@ -738,6 +739,159 @@ function doDelete() { if(!ctxData)return; if(ctxData.username===ME||myRole==='ad
 function doReact(emoji) { if(!ctxId)return; socket.emit('addReaction',{messageId:ctxId,emoji}); closePopups(); }
 
 function updateReacts(id, reacts) { const c=document.getElementById('r'+id); if(!c)return; c.innerHTML=''; Object.keys(reacts).forEach(e=>{if(!reacts[e].length)return; const s=document.createElement('span'); s.className='react-chip'+(reacts[e].includes(ME)?' mine':''); s.textContent=`${e} ${reacts[e].length}`; s.title=reacts[e].join(', '); s.onclick=()=>socket.emit('addReaction',{messageId:id,emoji:e}); c.appendChild(s);}); }
+
+// ==================== SWIPE TO REPLY ====================
+function setupSwipeReply(el, data) {
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let swiping = false;
+    let swiped = false;
+    const THRESHOLD = 60;
+    const isMe = data.username === ME;
+
+    // Create reply indicator
+    const indicator = document.createElement('div');
+    indicator.style.cssText = `
+        position: absolute;
+        ${isMe ? 'left: -30px' : 'right: -30px'};
+        top: 50%;
+        transform: translateY(-50%) scale(0);
+        font-size: 18px;
+        opacity: 0;
+        transition: transform 0.15s, opacity 0.15s;
+        pointer-events: none;
+        z-index: 5;
+    `;
+    indicator.textContent = '↩️';
+    el.style.position = 'relative';
+    el.appendChild(indicator);
+
+    el.addEventListener('touchstart', e => {
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        currentX = 0;
+        swiping = false;
+        swiped = false;
+        el.style.transition = 'none';
+    }, { passive: true });
+
+    el.addEventListener('touchmove', e => {
+        if (swiped) return;
+        const touch = e.touches[0];
+        const diffX = touch.clientX - startX;
+        const diffY = touch.clientY - startY;
+
+        // Only horizontal swipe
+        if (!swiping && Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)) {
+            swiping = true;
+        }
+
+        if (!swiping) return;
+
+        // Sent messages (right side) - swipe LEFT to reply
+        // Received messages (left side) - swipe RIGHT to reply
+        if (isMe) {
+            currentX = Math.max(diffX, -100);
+            if (currentX > 0) currentX = 0;
+        } else {
+            currentX = Math.min(diffX, 100);
+            if (currentX < 0) currentX = 0;
+        }
+
+        el.style.transform = `translateX(${currentX}px)`;
+
+        // Show indicator
+        const progress = Math.abs(currentX) / THRESHOLD;
+        indicator.style.opacity = Math.min(progress, 1);
+        indicator.style.transform = `translateY(-50%) scale(${Math.min(progress, 1)})`;
+
+        // Haptic at threshold
+        if (Math.abs(currentX) >= THRESHOLD && !swiped) {
+            swiped = true;
+            if (navigator.vibrate) navigator.vibrate(20);
+            indicator.style.transform = 'translateY(-50%) scale(1.3)';
+        }
+    }, { passive: true });
+
+    el.addEventListener('touchend', () => {
+        el.style.transition = 'transform 0.25s ease';
+        el.style.transform = 'translateX(0)';
+        indicator.style.opacity = '0';
+        indicator.style.transform = 'translateY(-50%) scale(0)';
+
+        if (swiped) {
+            // Trigger reply
+            replyTo = data;
+            document.getElementById('replyTxt').textContent =
+                `↩️ @${data.username}: ${(data.message || 'attachment').substring(0, 40)}`;
+            document.getElementById('replyBar').classList.add('on');
+            msgIn.focus();
+        }
+
+        swiping = false;
+        swiped = false;
+        currentX = 0;
+    });
+
+    // Mouse swipe (desktop)
+    let mouseDown = false;
+
+    el.addEventListener('mousedown', e => {
+        if (e.target.closest('audio') || e.target.closest('.file-box') || e.target.closest('img')) return;
+        startX = e.clientX;
+        mouseDown = true;
+        swiped = false;
+        el.style.transition = 'none';
+    });
+
+    document.addEventListener('mousemove', e => {
+        if (!mouseDown) return;
+        const diffX = e.clientX - startX;
+
+        if (isMe) {
+            currentX = Math.max(diffX, -100);
+            if (currentX > 0) currentX = 0;
+        } else {
+            currentX = Math.min(diffX, 100);
+            if (currentX < 0) currentX = 0;
+        }
+
+        if (Math.abs(currentX) > 10) {
+            el.style.transform = `translateX(${currentX}px)`;
+            const progress = Math.abs(currentX) / THRESHOLD;
+            indicator.style.opacity = Math.min(progress, 1);
+            indicator.style.transform = `translateY(-50%) scale(${Math.min(progress, 1)})`;
+
+            if (Math.abs(currentX) >= THRESHOLD && !swiped) {
+                swiped = true;
+                indicator.style.transform = 'translateY(-50%) scale(1.3)';
+            }
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!mouseDown) return;
+        mouseDown = false;
+
+        el.style.transition = 'transform 0.25s ease';
+        el.style.transform = 'translateX(0)';
+        indicator.style.opacity = '0';
+        indicator.style.transform = 'translateY(-50%) scale(0)';
+
+        if (swiped) {
+            replyTo = data;
+            document.getElementById('replyTxt').textContent =
+                `↩️ @${data.username}: ${(data.message || 'attachment').substring(0, 40)}`;
+            document.getElementById('replyBar').classList.add('on');
+            msgIn.focus();
+        }
+
+        swiped = false;
+        currentX = 0;
+    });
+}
 
 // ==================== DM ====================
 function openDM(u) { dmTo=u; document.getElementById('dmTitle').textContent='DM → @'+u; document.getElementById('dmMsgs').innerHTML=''; document.getElementById('dmPanel').classList.add('on'); }
