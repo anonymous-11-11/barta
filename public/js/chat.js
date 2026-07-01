@@ -844,6 +844,6 @@ if('Notification' in window&&Notification.permission==='default')Notification.re
 document.addEventListener('click',e=>{if(!e.target.closest('.picker')&&!e.target.closest('.tbtn')){document.getElementById('emojiPick').classList.remove('on');document.getElementById('gifPick').classList.remove('on');}});
 document.addEventListener('click',e=>{if(window.innerWidth<=768&&curSide&&!e.target.closest('.side')&&!e.target.closest('.lbar'))closeSide();});
 window.addEventListener('resize',()=>{msgsDiv.scrollTop=msgsDiv.scrollHeight;});
-window.addEventListener('beforeunload',e=>{e.preventDefault();e.returnValue='';});
+//window.addEventListener('beforeunload',e=>{e.preventDefault();e.returnValue='';});
 
 setTimeout(updateUIForRole,1000);
