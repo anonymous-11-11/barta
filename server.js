@@ -22,9 +22,9 @@ app.set('trust proxy', true);
 // ===== CONFIG =====
 let CONFIG = {
     ROOM_PASSWORD: 'df',
-    ADMIN_KEY: 'admin',
-    MAX_USERS: 50,
-    AUTO_DESTROY_MINUTES: 30,
+    ADMIN_KEY: 'admin73',
+    MAX_USERS: 73,
+    AUTO_DESTROY_MINUTES: 7,
     PREMIUM_CODE: 'DF404PREMIUM'
 };
 
