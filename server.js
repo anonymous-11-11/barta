@@ -346,14 +346,26 @@ io.on('connection', (socket) => {
         io.to(msg.room).emit('newMessage', msg);
     });
 
-    // DM
-    socket.on('sendDM', (data) => {
-        const t = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-        const dm = { id: uuidv4(), from: users[socket.id], to: data.to, message: data.message || null, image: data.image || null, type: data.image ? 'image' : 'text', time: t, timestamp: Date.now() };
-        const sid = Object.keys(users).find(s => users[s] === data.to);
-        if (sid) io.to(sid).emit('newDM', dm);
-        socket.emit('newDM', dm);
-    });
+ // DM
+socket.on('sendDM', (data) => {
+    const t = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    const dm = {
+        id: uuidv4(),
+        from: users[socket.id],
+        to: data.to,
+        message: data.message || null,
+        image: data.image || null,
+        file: data.file || null,
+        fileName: data.fileName || null,
+        fileSize: data.fileSize || null,
+        type: data.image ? 'image' : (data.file ? 'file' : 'text'),
+        time: t,
+        timestamp: Date.now()
+    };
+    const sid = Object.keys(users).find(s => users[s] === data.to);
+    if (sid) io.to(sid).emit('newDM', dm);
+    socket.emit('newDM', dm);
+});
 
     // DELETE
     socket.on('deleteMessage', (data) => {
