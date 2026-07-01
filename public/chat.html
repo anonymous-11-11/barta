@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0a0a">
     <link rel="icon" type="image/png" href="DF404-icon.png">
-    <title>DF404</title>
+    <title>DF404-Chatrooom</title>
     
     <style type="text/css">* { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -592,33 +592,77 @@ body.light .input-bar input { background: #eee; color: #333; }
     .lbar-item { width: 30px; height: 30px; font-size: 13px; }
     .lbar-item .tip { display: none !important; }
 
-    .side { position: fixed; left: 40px; top: 42px; height: calc(100% - 42px); z-index: 50; box-shadow: 4px 0 15px rgba(0,0,0,0.3); }
+    .side {
+        position: fixed;
+        left: 40px;
+        top: 42px;
+        height: calc(100% - 42px);
+        z-index: 50;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+    }
 
     .msg { max-width: 85%; }
     .msg-img { max-width: 180px; }
 
-    .input-bar { padding: 6px; gap: 3px; }
-    .input-bar input { padding: 8px 10px; font-size: 14px; }
-    .tbtn { width: 30px; height: 30px; font-size: 13px; }
-    .sendbtn { width: 30px; height: 30px; font-size: 12px; }
+    .input-bar {
+        padding: 6px;
+        gap: 3px;
+    }
+
+    .input-bar input {
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
+    .tbtn {
+        width: 30px;
+        height: 30px;
+        font-size: 13px;
+    }
+
+    .sendbtn {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+
+    /* ONLY hide GIF on mobile, NOT file */
     .tbtn.hide-m { display: none; }
 
     .dm { width: 100%; }
 
-    .picker { left: 4px; width: calc(100vw - 56px); max-width: 280px; bottom: 48px; }
+    .picker {
+        left: 4px;
+        width: calc(100vw - 56px);
+        max-width: 280px;
+        bottom: 48px;
+    }
 }
 
 @media (max-width: 380px) {
     .lbar { width: 36px; }
     .lbar-item { width: 26px; height: 26px; font-size: 12px; }
     .side { left: 36px; }
-    .tbtn { width: 26px; height: 26px; font-size: 11px; }
-    .sendbtn { width: 26px; height: 26px; font-size: 10px; }
+
+    .input-bar { gap: 2px; }
+
+    .tbtn {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+    }
+
+    .sendbtn {
+        width: 26px;
+        height: 26px;
+        font-size: 10px;
+    }
 }
 
 @supports (padding: env(safe-area-inset-bottom)) {
     .input-bar { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
-}</style>
+}
+</style>
 </head>
 <body>
 
@@ -699,19 +743,17 @@ body.light .input-bar input { background: #eee; color: #333; }
             <div class="gif-grid" id="gifGrid"><p style="color:#444;font-size:10px;grid-column:1/-1">Type to search...</p></div>
         </div>
 
-        <!-- INPUT -->
-        <div class="input-bar">
-            <button class="tbtn" onclick="toggleEmoji()">😊</button>
-            <button class="tbtn hide-m" onclick="toggleGif()">✨</button>
-            <input type="text" id="msgIn" placeholder="Message..." autocomplete="off">
-            <input type="file" id="imgIn" accept="image/*" hidden>
-            <input type="file" id="fileIn" hidden>
-            <button class="tbtn" onclick="document.getElementById('imgIn').click()">📷</button>
-            <button class="tbtn hide-m" onclick="document.getElementById('fileIn').click()">📁</button>
-            <button class="tbtn" id="voiceBtn" onmousedown="startRec()" onmouseup="stopRec()" ontouchstart="startRec(event)" ontouchend="stopRec()">🎙️</button>
-            <button class="sendbtn" onclick="sendMsg()">➤</button>
-        </div>
-    </div>
+       <!-- INPUT -->
+<div class="input-bar">
+    <button class="tbtn" onclick="toggleEmoji()">😊</button>
+    <button class="tbtn hide-m" onclick="toggleGif()">✨</button>
+    <input type="text" id="msgIn" placeholder="Message..." autocomplete="off">
+    <input type="file" id="imgIn" accept="image/*" hidden>
+    <input type="file" id="fileIn" hidden>
+    <button class="tbtn" onclick="document.getElementById('imgIn').click()">📷</button>
+    <button class="tbtn" onclick="document.getElementById('fileIn').click()">📁</button>
+    <button class="tbtn" id="voiceBtn" onmousedown="startRec()" onmouseup="stopRec()" ontouchstart="startRec(event)" ontouchend="stopRec()">🎙️</button>
+    <button class="sendbtn" onclick="sendMsg()">➤</button>
 </div>
 
 <!-- DM -->
@@ -720,6 +762,7 @@ body.light .input-bar input { background: #eee; color: #333; }
         <span id="dmTitle" style="color:#6c63ff;font-weight:700;font-size:13px">DM</span>
         <div style="display:flex;gap:5px;align-items:center">
             <button class="tbtn" onclick="dmImage()">📷</button>
+            <button class="tbtn" onclick="dmFile()">📁</button>
             <button class="tbtn" onclick="startCall(dmTo,'audio')">📞</button>
             <button class="tbtn" onclick="startCall(dmTo,'video')">📹</button>
             <span style="cursor:pointer;color:#555;font-size:15px" onclick="closeDM()">✕</span>
