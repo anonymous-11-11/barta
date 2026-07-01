@@ -32,6 +32,7 @@ let curRoom = 'general';
 let ctxId = null, ctxData = null;
 let replyTo = null;
 let dmTo = null;
+let dmReplyTo = null;
 let myRole = 'user';
 let isDark = true;
 let profiles = {};
@@ -896,8 +897,30 @@ function setupSwipeReply(el, data) {
 // ==================== DM ====================
 function openDM(u) { dmTo=u; document.getElementById('dmTitle').textContent='DM → @'+u; document.getElementById('dmMsgs').innerHTML=''; document.getElementById('dmPanel').classList.add('on'); }
 function closeDM() { document.getElementById('dmPanel').classList.remove('on'); dmTo=null; }
-function sendDM() { const m=document.getElementById('dmIn').value.trim(); if(!m||!dmTo)return; socket.emit('sendDM',{to:dmTo,message:m}); document.getElementById('dmIn').value=''; }
 
+function sendDM() {
+    const inp = document.getElementById('dmIn');
+    const m = inp.value.trim();
+    if (!m || !dmTo) return;
+
+    // Send with reply info
+    socket.emit('sendDM', {
+        to: dmTo,
+        message: m,
+        replyTo: dmReplyTo ? {
+            username: dmReplyTo.from,
+            message: dmReplyTo.message || (dmReplyTo.type === 'image' ? '📷 Photo' : '📄 File')
+        } : null
+    });
+
+    inp.value = '';
+    cancelDMReply();
+}
+
+function cancelDMReply() {
+    dmReplyTo = null;
+    document.getElementById('dmReplyBar').classList.remove('on');
+}
 async function dmImage() { if(!dmTo)return; const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
     inp.onchange=async e=>{const f=e.target.files[0]; if(!f)return; const c=await compressImg(f); const fd=new FormData(); fd.append('chatImage',c);
     try{const r=await fetch('/upload-image',{method:'POST',body:fd}); const d=await r.json(); if(d.success) socket.emit('sendDM',{to:dmTo,image:d.image});}catch(e){}}; inp.click(); }
@@ -937,11 +960,28 @@ async function dmFile() {
 }
 function addDMMsg(d) {
     const isMe = d.from === ME;
+
+      // Wrapper div for swipe
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `
+        position: relative;
+        overflow: visible;
+        display: flex;
+        flex-direction: column;
+        align-items: ${isMe ? 'flex-end' : 'flex-start'};
+        width: 100%;
+        margin-bottom: 4px;
+    `;
+
     const div = document.createElement('div');
     div.className = 'msg ' + (isMe ? 'me' : 'them');
-    div.style.maxWidth = '90%';
+    div.style.cssText = 'max-width: 75%; display: inline-flex; flex-direction: column;';
 
     let h = `<div class="msg-user">@${d.from}</div>`;
+        // Reply preview
+    if (d.replyTo) {
+        h += `<div class="reply-prev">↩️ @${d.replyTo.username}: ${esc(d.replyTo.message || '').substring(0, 40)}</div>`;
+    }
 
     if (d.type === 'image' && d.image) {
         h += `<div class="bubble" style="padding:3px"><img class="msg-img" src="${d.image}" onclick="viewImg(this)" style="max-width:180px"></div>`;
@@ -951,14 +991,140 @@ function addDMMsg(d) {
     } else {
         h += `<div class="bubble">${esc(d.message || '')}</div>`;
     }
-
     h += `<div class="msg-meta"><span>${d.time}</span></div>`;
     div.innerHTML = h;
+    wrapper.appendChild(div);
 
-    const m = document.getElementById('dmMsgs');
-    m.appendChild(div);
-    m.scrollTop = m.scrollHeight;
+    // Swipe reply
+    dmSwipe(div, d, isMe);
+
+    const container = document.getElementById('dmMsgs');
+    container.appendChild(wrapper);
+    container.scrollTop = container.scrollHeight;
 }
+
+function dmSwipe(el, data, isMe) {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let moveX = 0;
+    let isHorizontal = null;
+    let triggered = false;
+
+    // Arrow element
+    const arrow = document.createElement('span');
+    arrow.textContent = '↩️';
+    arrow.style.cssText = 'position:absolute;top:50%;font-size:16px;opacity:0;transition:opacity 0.1s;pointer-events:none;z-index:10;';
+    if (isMe) {
+        arrow.style.left = '-24px';
+    } else {
+        arrow.style.right = '-24px';
+    }
+    arrow.style.transform = 'translateY(-50%)';
+    el.style.position = 'relative';
+    el.parentElement.appendChild(arrow);
+
+    function onStart(x, y) {
+        touchStartX = x;
+        touchStartY = y;
+        moveX = 0;
+        isHorizontal = null;
+        triggered = false;
+        el.style.transition = 'none';
+    }
+
+    function onMove(x, y) {
+        if (triggered) return;
+
+        const dx = x - touchStartX;
+        const dy = y - touchStartY;
+
+        // First move - determine direction
+        if (isHorizontal === null) {
+            if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+                isHorizontal = Math.abs(dx) > Math.abs(dy);
+            }
+            return;
+        }
+
+        // Not horizontal = ignore
+        if (!isHorizontal) return;
+
+        // Clamp movement
+        if (isMe) {
+            moveX = Math.max(dx, -70);
+            if (moveX > 0) moveX = 0;
+        } else {
+            moveX = Math.min(dx, 70);
+            if (moveX < 0) moveX = 0;
+        }
+
+        el.style.transform = 'translateX(' + moveX + 'px)';
+
+        // Arrow visibility
+        const ratio = Math.abs(moveX) / 45;
+        arrow.style.opacity = Math.min(ratio, 1);
+
+        // Trigger at threshold
+        if (Math.abs(moveX) >= 45) {
+            triggered = true;
+            if (navigator.vibrate) navigator.vibrate(15);
+            arrow.style.opacity = '1';
+            arrow.style.fontSize = '20px';
+        }
+    }
+
+    function onEnd() {
+        el.style.transition = 'transform 0.2s ease';
+        el.style.transform = '';
+        arrow.style.opacity = '0';
+        arrow.style.fontSize = '16px';
+
+        if (triggered) {
+            dmReplyTo = data;
+            const txt = data.message || (data.type === 'image' ? '📷 Photo' : '📄 File');
+            document.getElementById('dmReplyTxt').textContent =
+                '↩️ @' + data.from + ': ' + txt.substring(0, 40);
+            document.getElementById('dmReplyBar').classList.add('on');
+            document.getElementById('dmIn').focus();
+        }
+
+        isHorizontal = null;
+        triggered = false;
+        moveX = 0;
+    }
+
+    // Touch events
+    el.addEventListener('touchstart', e => {
+        onStart(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+
+    el.addEventListener('touchmove', e => {
+        onMove(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+
+    el.addEventListener('touchend', onEnd, { passive: true });
+
+    // Mouse events (desktop)
+    let mouseDown = false;
+
+    el.addEventListener('mousedown', e => {
+        if (e.target.closest('audio, img, .file-box')) return;
+        mouseDown = true;
+        onStart(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('mousemove', e => {
+        if (!mouseDown) return;
+        onMove(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (!mouseDown) return;
+        mouseDown = false;
+        onEnd();
+    });
+}
+
 
 // ==================== ROOMS ====================
 function switchRoom(r) { socket.emit('joinRoom',{currentRoom:curRoom,newRoom:r}); curRoom=r; msgsDiv.innerHTML=''; sysMsg('Joined #'+r); document.getElementById('roomBadge').textContent='💬 '+r; socket.emit('getRooms'); }
