@@ -715,13 +715,64 @@ function sendDM() { const m=document.getElementById('dmIn').value.trim(); if(!m|
 async function dmImage() { if(!dmTo)return; const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
     inp.onchange=async e=>{const f=e.target.files[0]; if(!f)return; const c=await compressImg(f); const fd=new FormData(); fd.append('chatImage',c);
     try{const r=await fetch('/upload-image',{method:'POST',body:fd}); const d=await r.json(); if(d.success) socket.emit('sendDM',{to:dmTo,image:d.image});}catch(e){}}; inp.click(); }
+// DM File Share
+async function dmFile() {
+    if (!dmTo) return;
+    if (!isPrem()) return premBlock('File Share');
 
-function addDMMsg(d) { const isMe=d.from===ME; const div=document.createElement('div'); div.className='msg '+(isMe?'me':'them'); div.style.maxWidth='90%';
-    let h=`<div class="msg-user">@${d.from}</div>`;
-    if(d.type==='image'&&d.image) h+=`<div class="bubble" style="padding:3px"><img class="msg-img" src="${d.image}" onclick="viewImg(this)" style="max-width:180px"></div>`;
-    else h+=`<div class="bubble">${esc(d.message||'')}</div>`;
-    h+=`<div class="msg-meta"><span>${d.time}</span></div>`;
-    div.innerHTML=h; const m=document.getElementById('dmMsgs'); m.appendChild(div); m.scrollTop=m.scrollHeight; }
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.onchange = async e => {
+        const f = e.target.files[0];
+        if (!f) return;
+
+        const fd = new FormData();
+        fd.append('chatFile', f);
+
+        try {
+            const r = await fetch('/upload-file', { method: 'POST', body: fd });
+            const d = await r.json();
+
+            if (d.success) {
+                socket.emit('sendDM', {
+                    to: dmTo,
+                    message: '📄 ' + d.fileName + ' (' + (d.fileSize / 1024).toFixed(1) + 'KB)',
+                    file: d.file,
+                    fileName: d.fileName,
+                    fileSize: d.fileSize,
+                    type: 'file'
+                });
+            }
+        } catch(err) {
+            console.error(err);
+        }
+    };
+    inp.click();
+}
+function addDMMsg(d) {
+    const isMe = d.from === ME;
+    const div = document.createElement('div');
+    div.className = 'msg ' + (isMe ? 'me' : 'them');
+    div.style.maxWidth = '90%';
+
+    let h = `<div class="msg-user">@${d.from}</div>`;
+
+    if (d.type === 'image' && d.image) {
+        h += `<div class="bubble" style="padding:3px"><img class="msg-img" src="${d.image}" onclick="viewImg(this)" style="max-width:180px"></div>`;
+    } else if (d.type === 'file' && d.file) {
+        const kb = d.fileSize ? (d.fileSize / 1024).toFixed(1) : '?';
+        h += `<div class="bubble"><div class="file-box" onclick="dlFile('${d.file}','${esc(d.fileName || 'file')}')">📄 <div><div style="font-size:11px;color:#a29bfe">${esc(d.fileName || 'File')}</div><div style="font-size:9px;color:#555">${kb} KB</div></div></div></div>`;
+    } else {
+        h += `<div class="bubble">${esc(d.message || '')}</div>`;
+    }
+
+    h += `<div class="msg-meta"><span>${d.time}</span></div>`;
+    div.innerHTML = h;
+
+    const m = document.getElementById('dmMsgs');
+    m.appendChild(div);
+    m.scrollTop = m.scrollHeight;
+}
 
 // ==================== ROOMS ====================
 function switchRoom(r) { socket.emit('joinRoom',{currentRoom:curRoom,newRoom:r}); curRoom=r; msgsDiv.innerHTML=''; sysMsg('Joined #'+r); document.getElementById('roomBadge').textContent='💬 '+r; socket.emit('getRooms'); }
